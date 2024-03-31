@@ -66,7 +66,7 @@
         </button>
       </form>
     </div>
-    <div v-if="calculated" class="mt-8 overflow-x-auto">
+    <div v-if="calculated" class=" m-10 overflow-x-auto">
     <table class="table-auto w-full text-left whitespace-no-wrap">
       <thead class="text-xs font-semibold uppercase text-gray-700 bg-gray-50">
         <tr>
