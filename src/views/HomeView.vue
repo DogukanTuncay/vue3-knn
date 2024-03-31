@@ -123,7 +123,7 @@
 import { reactive, ref,nextTick } from 'vue';
 let nextId = 1; // Benzersiz ID'ler için sayaç
 const table = reactive({
-  columns: ['Yaş','Nabız','Solunum Hızı','Ateş']
+  columns: []
 });
 const knn = reactive({
   rows: [],
