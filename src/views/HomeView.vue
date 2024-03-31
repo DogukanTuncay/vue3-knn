@@ -59,7 +59,7 @@
       <form @submit.prevent="calculateKNN" class="flex flex-wrap gap-4 mb-4">
         <div v-for="column in table.columns" :key="column" class="flex flex-col">
           <label :for="`input-${column}`" class="mb-2">{{ column }}</label>
-          <input v-model="knnInput[column]" :id="`input-${column}`" type="text" placeholder="Değer"  />
+          <input v-model="knnInput[column]" :id="`input-${column}`" class="p-2 border rounded shadow-sm" type="text" placeholder="Değer"  />
         </div>
         <button type="submit" class="mt-4 bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded">
           Hesapla
