@@ -1,3 +1,91 @@
+
+<script setup>
+import { reactive, ref,nextTick } from 'vue';
+let nextId = 1; // Benzersiz ID'ler için sayaç
+const table = reactive({
+  columns: []
+});
+const knn = reactive({
+  rows: [],
+});
+
+const newColumnName = ref('');
+const selectedColumn = ref('');
+const newValues = ref('');
+const calculated = ref(false); // Hesaplama yapıldığında true olacak
+const log = reactive([]); // Her adımı kaydetmek için
+
+const addNewColumn = () => {
+  if (newColumnName.value && !table.columns.includes(newColumnName.value)) {
+    table.columns.push(newColumnName.value);
+    newColumnName.value = '';
+  }
+};
+
+const addNewValues = (values) => {
+  // Yeni satırı knn.rows'a ekle
+  // Örneğin, values: { Sütun1: 'değer1', Sütun2: 'değer2' }
+  if (newValues.value) {
+    const valuesArray = newValues.value.split(/[\s,]+/);
+    const newRow = {
+    id: nextId++, // Benzersiz ID ataması
+    values: valuesArray, // values bir dizi varsayılarak birleştiriliyor
+    distance: 0, // Varsayılan distance değeri
+    // result: '' // Başlangıçta boş bir result değeri
+  };
+  knn.rows.push(newRow);
+
+    newValues.value = '';
+    selectedColumn.value = '';
+  }
+  
+};
+// Kullanıcıdan alınan KNN hesaplama değerleri için bir reactive obje
+const knnInput = reactive({});
+function euclideanDistance(point1, point2, rowId) {
+  let sumExpression = ""; // Summation ifadesi için boş bir string
+  let sum = 0; // Uzaklık hesaplaması için başlangıç değeri
+
+  point1.forEach((p1, i) => {
+    const diff = p1 - point2[i];
+    sum += diff * diff; // Uzaklık hesaplaması
+    sumExpression += `${i > 0 ? " + " : ""}(${p1}-${point2[i]})^2`; // LaTeX formatında sum ifadesi
+  });
+
+  const distance = Math.sqrt(sum); // Öklid uzaklığını hesapla
+  const logStr = `Satır ${rowId}: \\(\\sqrt{${sumExpression}}\\) = ${distance.toFixed(2)}`; // LaTeX ve sonuç
+
+  return { distance, logStr };
+}
+
+const calculateKNN = () => {
+  log.length = 0; // Log dizisini temizle
+  const userInputValues = Object.values(knnInput).map(value => parseFloat(value));
+
+  knn.rows.forEach(row => {
+    const rowValues = row.values.map(value => parseFloat(value));
+    const { distance, logStr } = euclideanDistance(userInputValues, rowValues, row.id);
+    row.distance = distance;
+    log.push(logStr); // Hesaplama logunu ekle
+  });
+
+  calculated.value = true; // Hesaplama bayrağını ayarla
+  // MathJax'ı tetikle
+  nextTick(() => {
+    if (window.MathJax) {
+      window.MathJax.typesetPromise();
+    }
+  });
+};
+const removeRow = (index) => {
+  knn.rows.splice(index, 1); // İndekse göre satırı sil
+};
+const removeColumn = (index) => {
+  table.columns.splice(index, 1); // İndekse göre sütunu sil
+  // Sütun silindiğinde, knn.rows'daki ilgili değerleri de güncellemeniz gerekir
+  // Bu, mevcut veri yapınızda doğrudan mümkün olmayabilir
+};
+</script>
 <template>
   <div class="max-w-4xl mx-auto py-8 space-y-8">
     <!-- Sütun Ekleme Formu -->
@@ -113,90 +201,3 @@
 
 </template>
 
-<script setup>
-import { reactive, ref,nextTick } from 'vue';
-let nextId = 1; // Benzersiz ID'ler için sayaç
-const table = reactive({
-  columns: []
-});
-const knn = reactive({
-  rows: [],
-});
-
-const newColumnName = ref('');
-const selectedColumn = ref('');
-const newValues = ref('');
-const calculated = ref(false); // Hesaplama yapıldığında true olacak
-const log = reactive([]); // Her adımı kaydetmek için
-
-const addNewColumn = () => {
-  if (newColumnName.value && !table.columns.includes(newColumnName.value)) {
-    table.columns.push(newColumnName.value);
-    newColumnName.value = '';
-  }
-};
-
-const addNewValues = (values) => {
-  // Yeni satırı knn.rows'a ekle
-  // Örneğin, values: { Sütun1: 'değer1', Sütun2: 'değer2' }
-  if (newValues.value) {
-    const valuesArray = newValues.value.split(/[\s,]+/);
-    const newRow = {
-    id: nextId++, // Benzersiz ID ataması
-    values: valuesArray, // values bir dizi varsayılarak birleştiriliyor
-    distance: 0, // Varsayılan distance değeri
-    // result: '' // Başlangıçta boş bir result değeri
-  };
-  knn.rows.push(newRow);
-
-    newValues.value = '';
-    selectedColumn.value = '';
-  }
-  
-};
-// Kullanıcıdan alınan KNN hesaplama değerleri için bir reactive obje
-const knnInput = reactive({});
-function euclideanDistance(point1, point2, rowId) {
-  let sumExpression = ""; // Summation ifadesi için boş bir string
-  let sum = 0; // Uzaklık hesaplaması için başlangıç değeri
-
-  point1.forEach((p1, i) => {
-    const diff = p1 - point2[i];
-    sum += diff * diff; // Uzaklık hesaplaması
-    sumExpression += `${i > 0 ? " + " : ""}(${p1}-${point2[i]})^2`; // LaTeX formatında sum ifadesi
-  });
-
-  const distance = Math.sqrt(sum); // Öklid uzaklığını hesapla
-  const logStr = `Satır ${rowId}: \\(\\sqrt{${sumExpression}}\\) = ${distance.toFixed(2)}`; // LaTeX ve sonuç
-
-  return { distance, logStr };
-}
-
-const calculateKNN = () => {
-  log.length = 0; // Log dizisini temizle
-  const userInputValues = Object.values(knnInput).map(value => parseFloat(value));
-
-  knn.rows.forEach(row => {
-    const rowValues = row.values.map(value => parseFloat(value));
-    const { distance, logStr } = euclideanDistance(userInputValues, rowValues, row.id);
-    row.distance = distance;
-    log.push(logStr); // Hesaplama logunu ekle
-  });
-
-  calculated.value = true; // Hesaplama bayrağını ayarla
-  // MathJax'ı tetikle
-  nextTick(() => {
-    if (window.MathJax) {
-      window.MathJax.typesetPromise();
-    }
-  });
-};
-const removeRow = (index) => {
-  knn.rows.splice(index, 1); // İndekse göre satırı sil
-};
-const removeColumn = (index) => {
-  table.columns.splice(index, 1); // İndekse göre sütunu sil
-  // Sütun silindiğinde, knn.rows'daki ilgili değerleri de güncellemeniz gerekir
-  // Bu, mevcut veri yapınızda doğrudan mümkün olmayabilir
-};
-</script>

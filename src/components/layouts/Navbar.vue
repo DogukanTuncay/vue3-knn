@@ -7,7 +7,10 @@
   import { Bars3Icon, BellIcon, XMarkIcon } from '@heroicons/vue/24/outline'
   const navigation = [
     { name: 'KNN', href: '/', current: true },
-    { name: 'Naive', href: '/naive', current: true },
+    { name: 'Naive Bayes', href: '/naive', current: true },
+    { name: 'Entropy', href: '/entropy', current: true },
+    { name: 'K Mean', href: '/kmean', current: true },
+    { name: 'Fuzzy C Mean', href: '/fcm', current: true },
     // { name: 'Hakkında', href: '/about', current: false },
   ]
   </script>
