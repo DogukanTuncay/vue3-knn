@@ -175,6 +175,9 @@ const calculateEntropy = () => {
 <template>
     <div class="max-w-4xl mx-auto py-8 space-y-8">
       <!-- Sütun Ekleme Formu -->
+      <div class="p-4 mb-4 text-sm text-red-800 rounded-lg bg-red-50 dark:bg-gray-800 dark:text-red-400" role="alert">
+  <span class="font-medium">HAYIR-EVET YERİNE 0-1 GİRMEYİ UNUTMA !! </span>
+</div>
       <div>
         <form @submit.prevent="addNewColumn" class="flex gap-4 mb-4">
           <input v-model="newColumnName" placeholder="Yeni sütun adı" class="p-2 border rounded shadow-sm w-full" />
