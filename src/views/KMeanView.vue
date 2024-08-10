@@ -42,8 +42,8 @@ const removeCentroid = (index) => {
   initialCentroids.splice(index, 1);
 };
 
-const euclideanDistance = (point1, point2) => {
-  return Math.sqrt(Math.pow(point1.x - point2.x, 2) + Math.pow(point1.y - point2.y, 2));
+const manhattanDistance = (point1, point2) => {
+  return Math.abs(point1.x - point2.x) + Math.abs(point1.y - point2.y);
 };
 
 const performClustering = () => {
@@ -80,7 +80,7 @@ const performClustering = () => {
       const distances = [];
 
       clusters.forEach((cluster, clusterIndex) => {
-        const distance = euclideanDistance(point, cluster.centroid);
+        const distance = manhattanDistance(point, cluster.centroid);
         distances.push({ centroidIndex: clusterIndex, value: distance });
         if (distance < minDistance) {
           minDistance = distance;

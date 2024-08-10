@@ -9,7 +9,7 @@ const router = createRouter({
   routes: [
     {
       path: '/',
-      name: 'home',
+      name: 'KNN',
       component: HomeView
     },
     {
@@ -32,14 +32,6 @@ const router = createRouter({
       name: 'fcm',
       component: FuzzyView
     },
-    {
-    //  path: '/about',
-     // name: 'about',
-      // route level code-splitting
-      // this generates a separate chunk (About.[hash].js) for this route
-      // which is lazy-loaded when the route is visited.
-      component: () => import('../views/AboutView.vue')
-    }
   ]
 })
 
