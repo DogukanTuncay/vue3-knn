@@ -17,6 +17,8 @@
   const newValues = ref('');
   const calculated = ref(false); // Hesaplama yapıldığında true olacak
   const log = reactive([]); // Her adımı kaydetmek için
+  const distanceType = ref('euclidean'); // Mesafe hesaplama yöntemi
+  const kValue = ref(3); // k değeri
 
   const addNewColumn = () => {
     if (newColumnName.value && !table.columns.includes(newColumnName.value)) {
@@ -65,6 +67,35 @@
     };
   }
 
+  function manhattanDistance(point1, point2, rowId) {
+    let sumExpression = ""; // Summation ifadesi için boş bir string
+    let sum = 0; // Uzaklık hesaplaması için başlangıç değeri
+
+    point1.forEach((p1, i) => {
+      const diff = Math.abs(p1 - point2[i]);
+      sum += diff; // Manhattan uzaklığı hesaplaması
+      sumExpression += `${i > 0 ? " + " : ""}|${p1}-${point2[i]}|`; // LaTeX formatında sum ifadesi
+    });
+
+    const distance = sum; // Manhattan uzaklığı
+    const logStr = `Satır ${rowId}: \\(${sumExpression}\\) = ${distance.toFixed(2)}`; // LaTeX ve sonuç
+
+    return {
+      distance,
+      logStr
+    };
+  }
+
+  const calculateDistance = (point1, point2, rowId) => {
+    if (distanceType.value === 'euclidean') {
+      return euclideanDistance(point1, point2, rowId);
+    } else if (distanceType.value === 'manhattan') {
+      return manhattanDistance(point1, point2, rowId);
+    }
+    // Varsayılan olarak öklid mesafesini kullan
+    return euclideanDistance(point1, point2, rowId);
+  };
+
   const calculateKNN = () => {
     log.length = 0; // Log dizisini temizle
     const userInputValues = Object.values(knnInput).map(value => parseFloat(value));
@@ -74,10 +105,19 @@
       const {
         distance,
         logStr
-      } = euclideanDistance(userInputValues, rowValues, row.id);
+      } = calculateDistance(userInputValues, rowValues, row.id);
       row.distance = distance;
       log.push(logStr); // Hesaplama logunu ekle
     });
+
+    // Mesafe sonuçlarını sıralama
+    knn.rows.sort((a, b) => a.distance - b.distance);
+
+    // En yakın k komşuyu bul
+    const kNearest = knn.rows.slice(0, kValue.value);
+    
+    // Sonuçların görsel olarak belirtilmesi için ek bir mesaj ekle
+    log.push(`En yakın ${kValue.value} komşu: ${kNearest.map(row => row.id).join(', ')}`);
 
     calculated.value = true; // Hesaplama bayrağını ayarla
     // MathJax'ı tetikle
@@ -161,12 +201,24 @@
           <input v-model="knnInput[column]" :id="`input-${column}`" class="p-2 border rounded shadow-sm" type="text"
             placeholder="Değer" />
         </div>
+        <div class="flex flex-col">
+          <label for="k-value" class="mb-2">K Değeri</label>
+          <input v-model.number="kValue" id="k-value" type="number" min="1" class="p-2 border rounded shadow-sm" />
+        </div>
+        <div class="flex flex-col">
+          <label for="distance-type" class="mb-2">Mesafe Hesaplama Yöntemi</label>
+          <select v-model="distanceType" id="distance-type" class="p-2 border rounded shadow-sm">
+            <option value="euclidean">Öklid Mesafesi</option>
+            <option value="manhattan">Manhattan Mesafesi</option>
+          </select>
+        </div>
         <button type="submit" class="mt-4 bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded">
           Hesapla
         </button>
       </form>
     </div>
     <div v-if="calculated" class=" m-10 overflow-x-auto">
+      <h3 class="text-lg font-semibold mb-4">Sonuçlar (K = {{ kValue }}, Mesafe: {{ distanceType === 'euclidean' ? 'Öklid' : 'Manhattan' }})</h3>
       <table class="table-auto w-full text-left whitespace-no-wrap">
         <thead class="text-xs font-semibold uppercase text-gray-700 bg-gray-50">
           <tr>
@@ -174,34 +226,26 @@
             <th class="px-6 py-3">Distance</th>
             <th v-for="column,index in table.columns" :key="column" class="px-6 py-3">
               {{ column }}
-              <button @click="removeColumn(index)"
-                class="ml-2 bg-red-500 hover:bg-red-700 text-white font-bold py-1 px-2 rounded text-xs">
-                <span> <i class="fas fa-trash-can"></i></span>
-              </button> <!-- Sütun Silme Butonu -->
             </th>
+            <th class="px-6 py-3">K-NN Sonucu</th>
           </tr>
         </thead>
         <tbody class="text-sm divide-y divide-gray-200">
-          <tr v-for="row in knn.rows" :key="row.id">
+          <tr v-for="(row, rowIndex) in knn.rows" :key="row.id" :class="{ 'bg-green-100': rowIndex < kValue }">
             <td class="px-6 py-4">{{ row.id }}</td>
-            <td class="px-6 py-4">{{ row.distance }}</td>
+            <td class="px-6 py-4">{{ row.distance.toFixed(2) }}</td>
             <td v-for="(value, valueIndex) in row.values" :key="valueIndex" class="px-6 py-4">
               {{ value }}
             </td>
-            <!-- <td class="px-6 py-4">
-      <input v-model="row.result" type="text" placeholder="Sonuç" class="p-2 border rounded shadow-sm">
-    </td> -->
             <td class="px-6 py-4">
-              <button @click="removeRow(index)"
-                class="bg-red-500 hover:bg-red-700 text-white font-bold py-2 px-4 rounded">
-                <span> <i class="fas fa-trash-can"></i></span>
-              </button> <!-- Silme butonu -->
+              <span v-if="rowIndex < kValue" class="px-2 py-1 bg-green-500 text-white rounded">K-NN Komşusu</span>
             </td>
           </tr>
         </tbody>
       </table>
-      <div v-if="calculated">
-        <ul>
+      <div v-if="calculated" class="mt-6">
+        <h4 class="text-md font-semibold mb-2">Hesaplama Adımları:</h4>
+        <ul class="list-disc pl-5">
           <li v-for="(item, index) in log" :key="index" v-html="item"></li>
         </ul>
       </div>
